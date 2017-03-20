@@ -1,11 +1,5 @@
-import numpy as np
-import math
-from keras.initializations import normal, identity
-from keras.models import model_from_json, load_model
-from keras.engine.training import collect_trainable_weights
-from keras.models import Sequential
-from keras.layers import Dense, Flatten, Input, merge, Lambda, Activation
-from keras.models import Sequential, Model
+from keras.layers import Dense, Input, merge
+from keras.models import Model
 from keras.optimizers import Adam
 import keras.backend as K
 import tensorflow as tf
