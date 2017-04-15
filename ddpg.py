@@ -1,17 +1,9 @@
 from gym_torcs import TorcsEnv
 import numpy as np
-import random
-import pandas
 from qLearning import QL
-import json
+import os
 
-from ReplayBuffer import ReplayBuffer
-from ActorNetwork import ActorNetwork
-from CriticNetwork import CriticNetwork
-from OU import OU
-import timeit
-
-OU = OU()  # Ornstein-Uhlenbeck Process
+# OU = OU()  # Ornstein-Uhlenbeck Process
 
 
 def playGame(train_indicator=1):  # 1 means Train, 0 means simply Run
@@ -48,31 +40,35 @@ def playGame(train_indicator=1):  # 1 means Train, 0 means simply Run
             ob = env.reset(relaunch=True)  # relaunch TORCS every 3 episode because of the memory leak error
         else:
             ob = env.reset()
+        # s_t = int(dis[0]+dis[10]+dis[18])
 
-        s_t = ob.trackPos
-
+        s_t = normalize(ob.track)
         total_reward = 0.
         for j in range(max_steps):
-
+            print(ob.track)
             action = Qlearning.action_choose(s_t)
             if action == 'left':
-                actual_action = {'steer':'-0.3', 'acc':'1', 'brake':'0'}
+                actual_action = [-0.3, 1, 0]
+                # actual_action = {'steer':'-0.3', 'acc':'1', 'brake':'0'}
             elif action == 'go':
-                actual_action = {'steer': '0', 'acc': '1', 'brake': '0'}
-            elif action == 'right':
-                actual_action = {'steer': '0.3', 'acc': '1', 'brake': '0'}
-            ob, r_t, done, info = env.step(actual_action)
+                actual_action = [0, 1, 0]
+                # actual_action = {'steer': '0', 'acc': '1', 'brake': '0'}
+            else:
+                actual_action = [0.3, 1, 0]
+                # actual_action = {'steer': '0.3', 'acc': '1', 'brake': '0'}
+            die,ob, r_t, done, info = env.step(actual_action)
 
-            s_t1 = ob.trackPos
 
-            if train_indicator:
+            # s_t1 = int(dis[0] + dis[10] + dis[18])
+            s_t1 = normalize(ob.track)
+            if train_indicator and not die:
                 Qlearning.learn(s_t, action, r_t, s_t1, done)
 
             total_reward += r_t
+
+
+            print("Episode", i, "State", s_t, "Action", action, "Reward", r_t)
             s_t = s_t1
-
-            print("Episode", i, "Step", step, "Action", action, "Reward", r_t)
-
             step += 1
             if done:
                 break
@@ -89,6 +85,28 @@ def playGame(train_indicator=1):  # 1 means Train, 0 means simply Run
     env.end()  # This is for shutting down TORCS
     print("Finish.")
 
+def normalize(track):
+    dis = ''
+    for distance in track:
+        if distance >= 18:
+            dis += '8'
+        elif distance >= 12:
+            dis += '7'
+        elif distance >= 10:
+            dis += '6'
+        elif distance >= 8:
+            dis += '5'
+        elif distance >= 6:
+            dis += '4'
+        elif distance >= 5:
+            dis += '3'
+        elif distance >= 4:
+            dis += '2'
+        elif distance >= 3:
+            dis += '1'
+        else:
+            dis += '0'
+    return dis[3]+dis[9]+dis[16]
 
 if __name__ == "__main__":
     playGame()

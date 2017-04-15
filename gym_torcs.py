@@ -64,15 +64,20 @@ class TorcsEnv:
         # convert thisAction to the actual torcs actionstr
         client = self.client
 
-        this_action = self.agent_to_torcs(u)
+        # this_action = self.agent_to_torcs(u)
 
+        this_action = u
         # Apply Action
         action_torcs = client.R.d
 
         # Steering
-        action_torcs['steer'] = this_action['steer']  # in [-1, 1]
-        action_torcs['accel'] = this_action['accel']
-        action_torcs['brake'] = this_action['brake']
+
+        action_torcs['steer'] = this_action[0]
+        action_torcs['accel'] = this_action[1]
+        action_torcs['brake'] = this_action[2]
+        # action_torcs['steer'] = this_action['steer']  # in [-1, 1]
+        # action_torcs['accel'] = this_action['accel']
+        # action_torcs['brake'] = this_action['brake']
 
         action_torcs['gear'] = 1
         # Save the privious full-obs from torcs for the reward calculation
@@ -92,14 +97,12 @@ class TorcsEnv:
 
         # Reward setting Here #######################################
         # direction-dependent positive reward
-        sp = 1
 
-        progress = sp
-        reward = progress
+        track = np.array(obs['track'])
+        trackPos = np.array(obs['trackPos'])
+        reward = 10
 
         # collision detection
-        if obs['damage'] - obs_pre['damage'] > 0:
-            reward = -1
 
         # Termination judgement #########################
         episode_terminate = False
@@ -107,12 +110,6 @@ class TorcsEnv:
            reward = -200
            episode_terminate = True
            client.R.d['meta'] = True
-
-        if self.terminal_judge_start < self.time_step: # Episode terminates if the progress of agent is small
-           if progress < self.termination_limit_progress:
-               print("No progress")
-               episode_terminate = True
-               client.R.d['meta'] = True
 
         if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
             episode_terminate = True
@@ -125,7 +122,7 @@ class TorcsEnv:
 
         self.time_step += 1
 
-        return self.get_obs(), reward, client.R.d['meta'], {}
+        return episode_terminate,self.get_obs(), reward, client.R.d['meta'], {}
 
     def reset(self, relaunch=False):
         #print("Reset")
@@ -205,28 +202,17 @@ class TorcsEnv:
                  'wheelSpinVel']
         Observation = col.namedtuple('Observaion', names)
 
-        dis = []
-        for distance in raw_obs['trackPos']:
-            if distance < 160:
-                dis.append(6)
-            elif distance < 120:
-                dis.append(5)
-            elif distance < 80:
-                dis.append(4)
-            elif distance < 60:
-                dis.append(3)
-            elif distance < 40:
-                dis.append(2)
-            elif distance < 20:
-                dis.append(1)
-            else:
-                dis.append(0)
+
 
         return Observation(focus=np.array(raw_obs['focus'], dtype=np.float32)/200.,
                            speedX=np.array(raw_obs['speedX'], dtype=np.float32)/300.0,
                            speedY=np.array(raw_obs['speedY'], dtype=np.float32)/300.0,
                            speedZ=np.array(raw_obs['speedZ'], dtype=np.float32)/300.0,
                            angle=np.array(raw_obs['angle'], dtype=np.float32)/3.1416,
-                           track=np.array(raw_obs['track'], dtype=np.float32) / 200.,
-                           trackPos=np.array(dis, dtype=np.int8)
+                           damage=np.array(raw_obs['damage'], dtype=np.float32),
+                           opponents=np.array(raw_obs['opponents'], dtype=np.float32) / 200.,
+                           rpm=np.array(raw_obs['rpm'], dtype=np.float32) / 10000,
+                           track=np.array(raw_obs['track'], dtype=np.int16),
+                           trackPos=np.array(raw_obs['trackPos'], dtype=np.float32) / 1.,
+                           wheelSpinVel=np.array(raw_obs['wheelSpinVel'], dtype=np.float32)
         )
