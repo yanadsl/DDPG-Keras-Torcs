@@ -32,7 +32,7 @@ class QL:
             print("random")
         return action
 
-    def learn(self, state, action, reward, next_state, done):
+    def learn(self, state, action, reward, next_state, done = False):
         self.ob_exist(next_state)
         q_guess = self.table.ix[state, action]
         if done:

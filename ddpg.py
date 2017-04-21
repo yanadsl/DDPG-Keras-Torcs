@@ -8,9 +8,9 @@ import os
 
 def playGame(train_indicator=1):  # 1 means Train, 0 means simply Run
     actions = ['left', 'go', 'right']
-    learning_rate = 0.1
+    learning_rate = 0.2
     greedy = 0.1
-    decay = 0.2
+    decay = 0.9
 
     np.random.seed(1337)
 
@@ -56,12 +56,13 @@ def playGame(train_indicator=1):  # 1 means Train, 0 means simply Run
             else:
                 actual_action = [0.3, 1, 0]
                 # actual_action = {'steer': '0.3', 'acc': '1', 'brake': '0'}
-            die,ob, r_t, done, info = env.step(actual_action)
+
+            ob, r_t, done, info = env.step(actual_action)
 
 
             # s_t1 = int(dis[0] + dis[10] + dis[18])
             s_t1 = normalize(ob.track)
-            if train_indicator and not die:
+            if train_indicator:
                 Qlearning.learn(s_t, action, r_t, s_t1, done)
 
             total_reward += r_t
@@ -88,21 +89,21 @@ def playGame(train_indicator=1):  # 1 means Train, 0 means simply Run
 def normalize(track):
     dis = ''
     for distance in track:
-        if distance >= 18:
+        if distance >= 36:
             dis += '8'
-        elif distance >= 12:
+        elif distance >= 24:
             dis += '7'
-        elif distance >= 10:
+        elif distance >= 20:
             dis += '6'
-        elif distance >= 8:
+        elif distance >= 16:
             dis += '5'
-        elif distance >= 6:
+        elif distance >= 12:
             dis += '4'
-        elif distance >= 5:
+        elif distance >= 10:
             dis += '3'
-        elif distance >= 4:
+        elif distance >= 8:
             dis += '2'
-        elif distance >= 3:
+        elif distance >= 6:
             dis += '1'
         else:
             dis += '0'
