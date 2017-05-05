@@ -45,6 +45,7 @@ class TorcsEnv:
 
         obs = client.S.d  # Get the current full-observation from torcs
         """
+
         if throttle is False:
             self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(1,))
         else:
@@ -75,9 +76,6 @@ class TorcsEnv:
         action_torcs['steer'] = this_action[0]
         action_torcs['accel'] = this_action[1]
         action_torcs['brake'] = this_action[2]
-        # action_torcs['steer'] = this_action['steer']  # in [-1, 1]
-        # action_torcs['accel'] = this_action['accel']
-        # action_torcs['brake'] = this_action['brake']
 
         action_torcs['gear'] = 1
         # Save the privious full-obs from torcs for the reward calculation
@@ -86,6 +84,7 @@ class TorcsEnv:
         # One-Step Dynamics Update #################################
         # Apply the Agent's action into torcs
         client.respond_to_server()
+
         # Get the response of TORCS
         client.get_servers_input()
 
@@ -100,20 +99,33 @@ class TorcsEnv:
 
         track = np.array(obs['track'])
         trackPos = np.array(obs['trackPos'])
-        reward = 10
+
+        sp = int(np.array(obs['speedX'])/4)
+        if sp == 0 and action_torcs['accel'] != 1:
+            reward = -10
+        else:
+            reward = sp
 
         # collision detection
 
         # Termination judgement #########################
         episode_terminate = False
-        # if (abs(track.any()) > 1 or abs(trackPos) > 1):  # Episode is terminated if the car is out of track
-        #    reward = -200
-        #    episode_terminate = True
-        #    client.R.d['meta'] = True
-        #
-        # if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
-        #     episode_terminate = True
-        #     client.R.d['meta'] = True
+        # print(track)
+        """
+        if np.array(obs['speedX']) < -1:  # Episode is terminated if the car is out of track
+            reward = -1000
+            episode_terminate = True
+            client.R.d['meta'] = True
+        """
+
+        if (track[3] < 3 or track[9] < 3 or track[16] < 3):
+            reward = -1000
+            episode_terminate = True
+            client.R.d['meta'] = True
+        
+        if np.cos(obs['angle']) < 0: # Episode is terminated if the agent runs backward
+             episode_terminate = True
+             client.R.d['meta'] = True
 
 
         if client.R.d['meta'] is True: # Send a reset signal
