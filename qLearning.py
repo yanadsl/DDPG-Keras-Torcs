@@ -3,8 +3,9 @@ import pandas as pd
 import colorama
 from colorama import Fore, Back, Style
 
+
 class QL:
-    def __init__(self, actions, learning_rate, greedy, decay):
+    def __init__(self, actions, learning_rate, greedy, decay, Lambda):
         self.actions = actions
         self.lr = learning_rate
         self.learning_rate = learning_rate
@@ -12,6 +13,8 @@ class QL:
         self.greedy = greedy
         self.decay = decay
         self.table = pd.DataFrame(columns=self.actions)
+        self.backtrace = []
+        self.Lambda = Lambda
 
     def load(self, fname):
         try:
@@ -54,11 +57,16 @@ class QL:
         if done:
             q = reward
         else:
-            # q_learning
+            # sarsa
             q = reward + self.decay * self.table.ix[next_state, action]
-        # sarsa
-        # q = reward + self.decay * self.table.ix[next_state, :].max()
+
         self.table.ix[state, action] += self.learning_rate * (q - q_guess)
+
+
+    def SARSA_learn(self, state, a, reward, next_state, next_action):
+        q_guess = self.table.ix[state, a]
+        q = reward + self.decay * self.table.ix[next_state, next_action]  # SARSA
+        self.table.ix[state, a] += self.learning_rate * (q - q_guess)
 
     def ob_exist(self, state):
         if state not in self.table.index:
@@ -81,12 +89,12 @@ class QL:
     def parameter_reset(self):
         self.learning_rate = 0.3
         self.greedy = 0.01
-        ## self.learning_rate = self.lr
-        ## self.greedy = self.g
+        # self.learning_rate = self.lr
+        # self.greedy = self.g
 
     def parameter_set(self, lr, grdy, decay):
         self.learning_rate = lr
         self.greedy = grdy
         self.decay = decay
-        ## self.learning_rate = self.lr
-        ## self.greedy = self.g
+        # self.learning_rate = self.lr
+        # self.greedy = self.g

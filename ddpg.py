@@ -7,7 +7,7 @@ import os
 # OU = OU()  # Ornstein-Uhlenbeck Process
 
 
-def playGame(train_indicator=0) : # 1
+def playGame(train_indicator=0): # 1
     if train_indicator == 0:
         print(Back.RED + "NO TRAINING" + Style.RESET_ALL)
 
@@ -87,19 +87,18 @@ def playGame(train_indicator=0) : # 1
             ob = env.reset(relaunch=True)  # relaunch TORCS every 3 episode because of the memory leak error
         else:
             ob = env.reset()
-        # s_t = int(dis[0]+dis[10]+dis[18])
-        # os.system('sh speedup.sh')
 
         s_t = normalize(ob.track)
         total_reward = 0
-        for j in range(max_steps):
-            #if j > 0:
-                #Qlearning.parameter_set(0.3, 0.01, 0.5)
+        action = Qlearning.action_choose(s_t)
 
-            #Qlearning.parameter_change(step_sum_rate)
+        for j in range(max_steps):
+
 
             print("[" + str(ob.track[3]) + " " + str(ob.track[9]) + " " + str(ob.track[16]) + "]")
-            action = Qlearning.action_choose(s_t)
+
+            # action = Qlearning.action_choose(s_t)
+
             if action == 'left':
                 actual_action = [0.6, 0.1, 0]
                 # actual_action = {'steer':'-0.3', 'acc':'1', 'brake':'0'}
@@ -112,19 +111,19 @@ def playGame(train_indicator=0) : # 1
 
             ob, r_t, done, info = env.step(actual_action)
 
-            ## if step <= 450:
-                ## Qlearning.parameter_change(step)
-
-            # s_t1 = int(dis[0] + dis[10] + dis[18])
             s_t1 = normalize(ob.track)
+            a_t1 = Qlearning.action_choose(s_t1)
             if train_indicator:
-                Qlearning.learn(s_t, action, r_t, s_t1, done)
+                #Qlearning.learn(s_t, action, r_t, s_t1, done)
+                Qlearning.SARSA_learn(s_t, action, r_t, s_t1, a_t1)
+
 
             total_reward += r_t
 
 
             print("Episode", i,"step", j, "State", s_t, "Action", action, "Reward", r_t)
             s_t = s_t1
+            action = a_t1
             if done:
                 break
 
