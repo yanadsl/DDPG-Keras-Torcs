@@ -5,7 +5,7 @@ from colorama import Fore, Back, Style
 
 
 class QL:
-    def __init__(self, actions, learning_rate, greedy, decay, Lambda):
+    def __init__(self, actions, learning_rate, greedy, decay):
         self.actions = actions
         self.lr = learning_rate
         self.learning_rate = learning_rate
@@ -13,8 +13,6 @@ class QL:
         self.greedy = greedy
         self.decay = decay
         self.table = pd.DataFrame(columns=self.actions)
-        self.backtrace = []
-        self.Lambda = Lambda
 
     def load(self, fname):
         try:

@@ -2,23 +2,25 @@ from gym_torcs import TorcsEnv
 import numpy as np
 from qLearning import QL
 from colorama import Fore, Back, Style
-import os
+from qlearning_lambda import qlearning_lambda
+
 
 # OU = OU()  # Ornstein-Uhlenbeck Process
 
 
-def playGame(train_indicator=0): # 1
+def playGame(train_indicator=0):  # 1
     if train_indicator == 0:
         print(Back.RED + "NO TRAINING" + Style.RESET_ALL)
 
     # means Train, 0 means simply Run
     actions = ['left', 'go', 'right']
-    learning_rate = 0.3 # 0.3
-    greedy = 0 # 0.1
-    decay = 0.7 # 0.5
+    learning_rate = 0.3  # 0.3
+    greedy = 0  # 0.1
+    decay = 0.7  # 0.5
+    Lambda = 0.7
     np.random.seed(1337)
 
-    episode_count = 2000
+    episode_count = 260
     max_steps = 30000
     reward = 0
     done = False
@@ -31,7 +33,8 @@ def playGame(train_indicator=0): # 1
     # Generate a Torcs environment
     env = TorcsEnv(vision=False, throttle=True, gear_change=False)
 
-    Qlearning = QL(actions, decay, greedy, learning_rate)
+    # Qlearning = QL(actions, decay, greedy, learning_rate)
+    Qlearning = qlearning_lambda(actions, decay, greedy, learning_rate, Lambda)
 
     # Now load the weight
     Qlearning.load("Qtable.h5")
@@ -61,8 +64,7 @@ def playGame(train_indicator=0): # 1
         file.write(str(i))
         file.close()
 
-        print("step_sum: "+str(step_sum))
-
+        print("step_sum: " + str(step_sum))
 
         if step_sum < 200:
             Qlearning.parameter_set(0.5, 0.05, 0.7)
@@ -82,7 +84,6 @@ def playGame(train_indicator=0): # 1
             Qlearning.parameter_set(0.3, 0.001, 0.7)
             print(Back.BLUE + "set5" + Style.RESET_ALL)
 
-
         if np.mod(i, 30) == 0:
             ob = env.reset(relaunch=True)  # relaunch TORCS every 3 episode because of the memory leak error
         else:
@@ -90,14 +91,12 @@ def playGame(train_indicator=0): # 1
 
         s_t = normalize(ob.track)
         total_reward = 0
-        action = Qlearning.action_choose(s_t)
 
         for j in range(max_steps):
 
-
             print("[" + str(ob.track[3]) + " " + str(ob.track[9]) + " " + str(ob.track[16]) + "]")
 
-            # action = Qlearning.action_choose(s_t)
+            action = Qlearning.action_choose(s_t)
 
             if action == 'left':
                 actual_action = [0.6, 0.1, 0]
@@ -112,25 +111,19 @@ def playGame(train_indicator=0): # 1
             ob, r_t, done, info = env.step(actual_action)
 
             s_t1 = normalize(ob.track)
-            a_t1 = Qlearning.action_choose(s_t1)
             if train_indicator:
-                #Qlearning.learn(s_t, action, r_t, s_t1, done)
-                Qlearning.SARSA_learn(s_t, action, r_t, s_t1, a_t1)
-
+                Qlearning.learn(s_t, action, r_t, s_t1, done)
 
             total_reward += r_t
 
-
-            print("Episode", i,"step", j, "State", s_t, "Action", action, "Reward", r_t)
+            print("Episode", i, "step", j, "State", s_t, "Action", action, "Reward", r_t)
             s_t = s_t1
-            action = a_t1
             if done:
                 break
 
             if (j != 0) & (j % 384 == 0):
                 print(Back.RED + "Qlearning table is saved" + Style.RESET_ALL)
                 Qlearning.save("Qtable.h5")
-
 
             if j > best_step:
                 best_step = j
@@ -139,7 +132,7 @@ def playGame(train_indicator=0): # 1
                 best_step_change = False
 
         if best_step_change:
-            #Qlearning.save("Qtable_"+str(best_step)+".h5")
+            # Qlearning.save("Qtable_"+str(best_step)+".h5")
             file = open('best_step.txt', 'w')
             file.write(str(best_step))
             file.close()
@@ -171,6 +164,7 @@ def playGame(train_indicator=0): # 1
 
     env.end()  # This is for shutting down TORCS
     print("Finish.")
+
 
 def normalize(track):
     dis = []
@@ -231,7 +225,8 @@ def normalize(track):
         else:
             dis.append("00")
         """
-    return dis[3]+dis[9]+dis[16]
+    return dis[3] + dis[9] + dis[16]
+
 
 if __name__ == "__main__":
     playGame()
