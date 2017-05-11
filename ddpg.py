@@ -5,10 +5,7 @@ from colorama import Fore, Back, Style
 from qlearning_lambda import qlearning_lambda
 
 
-# OU = OU()  # Ornstein-Uhlenbeck Process
-
-
-def playGame(train_indicator=0):  # 1
+def playGame(train_indicator=1):  # 1 means learning
     if train_indicator == 0:
         print(Back.RED + "NO TRAINING" + Style.RESET_ALL)
 

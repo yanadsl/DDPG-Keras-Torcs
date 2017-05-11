@@ -30,13 +30,12 @@ class qlearning_lambda(QL):
 
     def ob_exist(self, state):
         if state not in self.table.index:
-            new = self.table.append(
-                pd.Series(
+            new = pd.Series(
                     [0] * len(self.actions),
                     index=self.table.columns,
                     name=state,
-                )
             )
+
             self.table = self.table.append(new)
             self.backtrace = self.backtrace.append(new)
 
