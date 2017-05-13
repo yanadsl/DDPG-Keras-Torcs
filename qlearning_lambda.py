@@ -7,8 +7,17 @@ class qlearning_lambda(QL):
     def __init__(self, actions, learning_rate, greedy, decay, Lambda):
         QL.__init__(self, actions, learning_rate, greedy, decay)
 
-        self.backtrace = pd.DataFrame(columns=self.actions)
+        self.backtrace = self.table.copy()
         self.Lambda = Lambda
+
+    def load(self, fname):
+        try:
+            self.table = pd.read_hdf(fname, 'table')
+            self.backtrace = self.table.copy()
+            self.back_reset()
+            print("load successfully")
+        except:
+            print("no file to load")
 
     def learn(self, state, action, reward, next_state, done=False):
         self.ob_exist(next_state)
