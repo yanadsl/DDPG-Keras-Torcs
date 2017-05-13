@@ -1,16 +1,18 @@
 from qLearning import QL
 import pandas as pd
+from colorama import Fore, Back, Style
 
 class qlearning_lambda(QL):
 
     def __init__(self, actions, learning_rate, greedy, decay, Lambda):
-        super().__init__(actions, learning_rate, greedy, decay)
+        QL.__init__(self, actions, learning_rate, greedy, decay)
 
-        self.backtrace = self.table.copy()
+        self.backtrace = pd.DataFrame(columns=self.actions)
         self.Lambda = Lambda
 
     def learn(self, state, action, reward, next_state, done=False):
         self.ob_exist(next_state)
+        self.back_exist(next_state)
         q_guess = self.table.ix[state, action]
         if done:
             q = reward
@@ -25,7 +27,6 @@ class qlearning_lambda(QL):
         self.backtrace.ix[state, action] = 1
 
         self.table += self.lr * diff * self.backtrace
-
         self.backtrace *= self.decay * self.Lambda
 
     def ob_exist(self, state):
@@ -34,8 +35,19 @@ class qlearning_lambda(QL):
                     [0] * len(self.actions),
                     index=self.table.columns,
                     name=state,
-            )
-
+                )
             self.table = self.table.append(new)
             self.backtrace = self.backtrace.append(new)
 
+    def back_exist(self, state):
+        if state not in self.backtrace.index:
+            new = pd.Series(
+                    [0] * len(self.actions),
+                    index=self.backtrace.columns,
+                    name=state,
+                )
+            self.backtrace = self.backtrace.append(new)
+
+    def back_reset(self):
+        for act in self.actions:
+            self.backtrace[act] = 0
